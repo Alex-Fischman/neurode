@@ -1,13 +1,15 @@
-module Neurode (gradient, identity) where
+module Neurode (train) where
 
 import Dual
 
-type Vector a = [a]
-type Matrix a = Vector (Vector a)
+train :: (Fractional a, Eq a) => ([Dual a] -> b -> Dual a) -> [(b, Dual a)] -> [a] -> [a]
+train model training start = descend (\state -> sum . map (\(input,output) -> loss (model state input) output) $ training) start
+    where loss a b = (a - b) ^ (2::Int) 
 
-gradient :: Num a => (Vector (Dual a) -> Dual b) -> Vector a -> Vector b
-gradient f xs = map (differentiate . f . zipWith Dual xs . map fromIntegral) . identity $ length xs
+descend :: (Fractional a, Eq a) => ([Dual a] -> Dual a) -> [a] -> [a]
+descend f xs = zipWith (-) xs . map (\x -> if x == 0 then 0 else result / x) . gradient f $ xs
+    where result = evaluate . f . zipWith Dual xs $ repeat 0
 
-identity :: Int -> Matrix Int
-identity n = map (take n) . take n $ ii
-    where ii = (1:repeat 0) : map (0:) ii
+gradient :: Num a => ([Dual a] -> Dual b) -> [a] -> [b] 
+gradient f xs = map (differentiate . f . zipWith Dual xs) . i . length $ xs
+    where i n = iterate ((:) (1:repeat 0) . map (0:)) [] !! n
