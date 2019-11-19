@@ -3,10 +3,14 @@ module Dual (Dual (..), evaluate, differentiate) where
 data Dual a = Dual a a deriving (Read, Show, Eq, Ord)
 
 evaluate :: Dual a -> a
-evaluate (Dual u u') = u
+evaluate (Dual u _) = u
 
 differentiate :: Dual a -> a
-differentiate (Dual u u') = u'
+differentiate (Dual _ u') = u'
+
+instance Enum a => Enum (Dual a) where
+    toEnum n            = Dual (toEnum n) (toEnum 0)
+    fromEnum (Dual u _) = fromEnum u
 
 instance Num a => Num (Dual a) where
     (Dual u u') + (Dual v v') = Dual (u + v) (u' + v')
