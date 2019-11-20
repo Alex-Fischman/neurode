@@ -1,13 +1,20 @@
 import Neurode
 
-main :: IO ()
-main = print $ map (fromRational :: Rational -> Double) $ (!!10) $ iterate (train model training) state
+main = print $ layer (iterate (train layer training) initial !! 10) [5, 199]
 
-training :: (Num a, Enum a) => [([a], a)]
-training = [([a,b], a + b) | a <- [-10..10], b <- [-10..10]]
+training = [([a, b], [a + b]) | a <- [-10..10], b <- [-10..10]]
 
-state :: [Rational]
-state = [3 / 2, 2]
+initial = replicate 3 0
 
-model :: Num a => [a] -> [a] -> a
-model = (.) sum . zipWith (*)
+layer state input = zipWith (+) biases $ map (sum . zipWith (*) input) $ chunks (length input) weights
+    where
+        (weights, biases) = splitAt (totalLen - outLen) state
+
+        outLen = totalLen `div` (inLen + 1)
+        inLen = length input
+        totalLen = length state
+
+        chunks _ [] = []
+        chunks n xs =
+            let (ys, zs) = splitAt n xs
+            in  ys : chunks n zs
